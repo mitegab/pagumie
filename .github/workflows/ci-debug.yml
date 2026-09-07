@@ -1,0 +1,104 @@
+# TEMPORARY: mirrors build output into issue #1 so it can be read through the
+# GitHub API, and auto-applies `cargo fmt`, because the development sandbox has
+# no Rust toolchain and cannot download Actions logs. Removed before the branch
+# is finalised; see issue #1.
+name: ci-debug
+
+on:
+  push:
+    branches: ["arena/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: ci-debug-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo fmt --all (auto-apply)
+        run: cargo fmt --all
+
+      - name: Run the suite, capturing each command separately
+        run: |
+          set +e
+          mkdir -p /tmp/logs
+          run_step() {
+            name="$1"; shift
+            "$@" > "/tmp/logs/$name.txt" 2>&1
+            echo "$?" > "/tmp/logs/$name.exit"
+          }
+          run_step build cargo build --workspace --all-targets
+          run_step test cargo test --workspace --all-targets
+          run_step doctest cargo test --workspace --doc
+          run_step clippy cargo clippy --workspace --all-targets --all-features -- -D warnings
+          run_step nostd cargo build -p ethiopic-calendar --no-default-features
+          RUSTDOCFLAGS="-D warnings" run_step doc cargo doc --workspace --all-features --no-deps
+          true
+
+      - name: Post results to issue #1
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY' > /tmp/body.md
+          import os, glob
+          run = os.environ.get('GITHUB_RUN_ID', '?')
+          sha = os.environ.get('GITHUB_SHA', '?')[:8]
+          print(f'### run {run} @ {sha}')
+          order = ['build', 'test', 'doctest', 'clippy', 'nostd', 'doc']
+          budget = 55000
+          bodies = []
+          for name in order:
+              try:
+                  code = open(f'/tmp/logs/{name}.exit').read().strip()
+              except OSError:
+                  continue
+              raw = open(f'/tmp/logs/{name}.txt', errors='replace').read()
+              skip = ('   Compiling', '    Checking', '   Downloading', '    Updating',
+                      '     Running', '  Downloaded', '     Locking', '      Adding',
+                      '    Blocking', '   Installing', '    Finished', '      Fresh')
+              log = '\n'.join(l for l in raw.splitlines()
+                               if not l.lstrip('\x1b[0-9;m').startswith(tuple(s.strip() for s in skip)))
+              if code == '0':
+                  tail = [l for l in log.splitlines() if l.startswith('test result:')
+                          or l.startswith('warning:')][-12:]
+                  bodies.append((name, code, '\n'.join(tail)))
+              else:
+                  bodies.append((name, code, log))
+          share = max(4000, budget // max(1, sum(1 for b in bodies if b[1] != '0')))
+          for name, code, text in bodies:
+              status = 'ok' if code == '0' else f'FAILED (exit {code})'
+              print(f'\n<details open><summary><b>{name}</b>: {status}</summary>\n')
+              print('```')
+              if code != '0' and len(text) > share:
+                  text = text[:share // 3] + '\n...[snip]...\n' + text[-2 * share // 3:]
+              print(text.strip() or '(no output)')
+              print('```')
+              print('\n</details>')
+          PY
+          gh issue comment 1 --repo "$GITHUB_REPOSITORY" --body-file /tmp/body.md
+
+      - name: Commit formatting fixes back to the branch
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add -A
+            git commit -m "style: cargo fmt [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi

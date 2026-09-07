@@ -1,0 +1,363 @@
+.\" Manual page for ethdate.
+.\" SPDX-License-Identifier: MIT OR Apache-2.0
+.TH ETHDATE 1 "2025-09" "ethdate 0.1.0" "User Commands"
+.SH NAME
+ethdate \- print and convert Ethiopian calendar dates
+.SH SYNOPSIS
+.B ethdate
+.RI [ OPTIONS ]
+.RI [ DATE .\|.\|.]
+.SH DESCRIPTION
+.B ethdate
+prints the current date in the Ethiopian calendar, converts dates between the
+Ethiopian, Gregorian and Julian calendars and the Julian Day Number, fixed day
+number and Unix time scales, lists the holidays of an Ethiopian year, prints the
+traditional
+.I Baḥire Ḥasab
+computus table, and draws a month grid in the manner of
+.BR cal (1).
+.PP
+The Ethiopian calendar has thirteen months: twelve of thirty days and
+.IR Ṗagumēn ,
+a short thirteenth month of five days, or six in a leap year. A leap year is one
+whose year number leaves a remainder of three when divided by four \(em three,
+not zero, which is the single most common mistake in other implementations. The
+year begins on 11 September in the Gregorian calendar, or 12 September in the
+year preceding a Gregorian leap year. That correspondence holds only while the
+Ethiopian and Gregorian leap cycles are in phase, which is to say until
+1 March 2100; thereafter every skipped Gregorian century leap day moves it one
+day later.
+.PP
+With no
+.IR DATE ,
+.B ethdate
+prints today. A
+.I DATE
+may be:
+.RS
+.IP \(bu 2
+an ISO-shaped date,
+.IR YYYY-MM-DD ,
+read in the calendar named by
+.BR \-\-from ;
+.IP \(bu 2
+one of
+.BR now ,
+.BR today ,
+.B yesterday
+or
+.BR tomorrow ;
+.IP \(bu 2
+a Unix timestamp written as
+.BR @1757548800 ;
+.IP \(bu 2
+a relative day count such as
+.B +30
+or
+.BR \-7 ;
+.IP \(bu 2
+a bare number when
+.B \-\-from
+is
+.BR jdn ,
+.B rd
+or
+.BR unix ;
+.IP \(bu 2
+.BR \- ,
+meaning read dates from standard input, one per line.
+.RE
+.SH OPTIONS
+.TP
+.BR \-d ", " \-\-date " \fIDATE\fR"
+Convert
+.IR DATE .
+May be given more than once.
+.TP
+.BR \-f ", " \-\-format " \fIFORMAT\fR"
+Format the output with the
+.BR strftime (3)-style
+grammar described under
+.BR FORMAT .
+.TP
+.BR \-F ", " \-\-from " \fICALENDAR\fR"
+Read input dates in
+.IR CALENDAR .
+Default:
+.BR ethiopic .
+.TP
+.BR \-t ", " \-\-to " \fICALENDAR\fR"
+Write output dates in
+.IR CALENDAR .
+Default:
+.BR ethiopic ,
+except that
+.B \-\-from
+alone implies conversion to the Ethiopian calendar.
+.TP
+.BR \-g ", " \-\-gregorian ", " \-e ", " \-\-ethiopic ", " \-\-julian ", " \-\-jdn ", " \-\-rd ", " \-\-unix
+Shorthands for
+.BR \-\-to .
+.TP
+.BR \-I ", " \-\-iso
+Print a bare
+.I YYYY-MM-DD
+with no names or era marker.
+.TP
+.BR \-j ", " \-\-json
+Print one JSON object per date, containing every calendar's view of it, the
+weekday, day of year, leap-year flag, Amete Alem year and any holiday.
+.TP
+.B \-\-waybar
+Print a single JSON object with the
+.IR text ,
+.IR alt ,
+.I tooltip
+and
+.I class
+keys that Waybar's
+.I custom
+module expects. The class is one of
+.IR holiday ,
+.IR observance ,
+.I pagume
+or
+.IR ordinary ,
+so holidays can be styled in CSS.
+.TP
+.BR \-\-polybar ", " \-\-i3blocks ", " \-\-i3status
+Print one line suitable for a status bar, marking public holidays with a star.
+.TP
+.B \-\-locale \fILOCALE\fR
+Use
+.B am
+for Amharic names or
+.B en
+for Latin ones. The default is taken from
+.IR $LC_ALL ,
+.I $LC_TIME
+or
+.IR $LANG ,
+falling back to Amharic.
+.TP
+.B \-\-era \fIERA\fR
+Number years in
+.B am
+.RI ( Amete
+.IR Mihret ,
+the default) or
+.B aa
+.RI ( Amete
+.IR Alem ,
+5500 years earlier).
+.TP
+.B \-\-day\-start \fIWHEN\fR
+Choose when a calendar day turns:
+.B dawn
+(06:00 local, the traditional reckoning, the default) or
+.BR midnight .
+This matters between midnight and dawn, when the traditional and civil dates
+differ.
+.TP
+.BR \-u ", " \-\-utc
+Use UTC instead of the local zone.
+.TP
+.B \-\-offset \fI±HH:MM\fR
+Use a fixed UTC offset instead of the local zone.
+.TP
+.BR \-T ", " \-\-time
+Include the Ethiopian time of day. Ethiopian clock hours are counted from dawn,
+so 1 o'clock in the morning is 07:00 by the Western clock.
+.TP
+.BR \-c ", " \-\-calendar " [\fIYEAR\fR]"
+Print a month grid. With a
+.I YEAR
+the whole year is printed; with
+.I YYYY-MM
+that month is printed; with neither, the current month.
+.TP
+.BR \-y ", " \-\-year " [\fIYEAR\fR]"
+Print all thirteen months of a year.
+.TP
+.B \-\-holidays " [\fIYEAR\fR]"
+List the holidays of an Ethiopian year with their Ethiopian and Gregorian dates.
+Islamic holidays observed in Ethiopia follow the Hijri calendar and are
+deliberately not listed; see
+.BR BUGS .
+.TP
+.B \-\-computus " [\fIYEAR\fR]"
+Print the
+.I Baḥire Ḥasab
+table: the Amete Alem year, medeb, wenber, abektie, metqi, the evangelist of the
+year and every movable feast.
+.TP
+.B \-\-is\-holiday
+Exit 0 if the date is a public holiday and 1 if it is not, printing the name
+unless
+.B \-\-quiet
+is given. Intended for shell conditionals.
+.TP
+.BR \-s ", " \-\-stdin
+Read dates from standard input, one per record.
+.TP
+.BR \-0 ", " \-\-null
+Separate input and output records with NUL rather than newline.
+.TP
+.BR \-q ", " \-\-quiet
+Print no error messages; report failure through the exit status alone.
+.TP
+.B \-\-no\-color
+Never emit ANSI colour. Colour is also suppressed when standard output is not a
+terminal or when
+.I $NO_COLOR
+is set.
+.TP
+.BR \-h ", " \-\-help
+Print a usage summary and exit.
+.TP
+.BR \-V ", " \-\-version
+Print version information and exit.
+.SH CALENDARS
+.BR ethiopic ", " gregorian ", " julian ", " jdn ", " rd ", " unix .
+.B rd
+is the fixed day number of Reingold and Dershowitz, with R.D. 1 = 1 January 1
+(Gregorian).
+.SH FORMAT
+.TS
+tab(@);
+l l.
+%Y@year, zero padded to four digits
+%y@year modulo 100
+%C@century
+%G@year in Ge'ez numerals, e.g. ፳፻፲፯
+%m@month number, 1\(en13
+%d@day of the month
+%e@day of the month, space padded
+%B@month name, per \fB\-\-locale\fR
+%b@month name in Latin script
+%h@three-letter month abbreviation
+%A@weekday name, per \fB\-\-locale\fR
+%a@three-letter English weekday
+%q@weekday, Latin transliteration
+%u@ISO weekday number, Monday = 1
+%w@weekday number, Sunday = 0
+%j@day of the year, 1\(en366
+%E@era, Latin: E.C.
+%N@era, Amharic: ዓ.ም.
+%L@year in the Amete Alem era
+%F@%Y\-%m\-%d
+%D@%m/%d/%y
+%g@the Gregorian equivalent, ISO form
+%J@Julian Day Number
+%R@fixed day number (R.D.)
+%s@Unix timestamp of midnight UTC
+%I@Ethiopian hour, 1\(en12
+%K@Ethiopian hour, zero padded
+%H@Western hour, 0\(en23
+%M@minute
+%S@second
+%p@period of day, Amharic
+%P@period of day, romanised
+%T@%I:%M:%S %p
+%Z@time-zone abbreviation
+%z@UTC offset
+%n %t %%@newline, tab, a literal %
+.TE
+.PP
+A
+.B \-
+between the
+.B %
+and the specifier suppresses zero padding, as in
+.BR %\-d .
+An unknown specifier is reproduced verbatim, so a typo is visible rather than
+silently dropped.
+.SH EXIT STATUS
+.TP
+.B 0
+Success; or, with
+.BR \-\-is\-holiday ,
+the date is a public holiday.
+.TP
+.B 1
+A date could not be parsed or converted; or, with
+.BR \-\-is\-holiday ,
+the date is an ordinary day.
+.TP
+.B 2
+The command line was wrong.
+.PP
+A broken pipe is not an error:
+.B ethdate \-\-holidays | head \-1
+exits 0.
+.SH ENVIRONMENT
+.TP
+.I TZ
+The time zone, as a zoneinfo name, an absolute path to a TZif file, or a fixed
+offset such as
+.BR +03:00 .
+When unset,
+.I /etc/localtime
+is read.
+.TP
+.IR LC_ALL ", " LC_TIME ", " LANG
+Select the default script for names.
+.TP
+.I NO_COLOR
+When set, colour is never emitted.
+.SH EXAMPLES
+.TP
+Today, in Amharic:
+.B ethdate
+.TP
+Today, with the Ethiopian time of day:
+.B ethdate \-\-locale en \-T
+.TP
+Convert a Gregorian date:
+.B ethdate \-F gregorian 2024\-09\-11
+.TP
+Convert back:
+.B ethdate \-g 2017\-01\-01
+.TP
+The coming week, from a pipe:
+.B seq 0 6 | sed 's/^/+/' | ethdate \-
+.TP
+Feed a script with JSON:
+.B ethdate \-\-json | jq \-r .ethiopic.month_name
+.TP
+Act on today's status:
+.B ethdate \-\-is\-holiday \-q || make \-C /srv/work
+.TP
+This year's holidays as a table:
+.B ethdate \-\-holidays \-\-locale en
+.TP
+A Waybar module:
+.B exec = ethdate \-\-waybar
+.SH BUGS
+Eid al\-Fitr, Eid al\-Adha and Mawlid are public holidays in Ethiopia but follow
+the Hijri calendar, which this program does not implement; they are omitted
+rather than approximated.
+.PP
+Genna is observed on 28
+.I Taḫśaś
+in years whose number is divisible by four, which keeps it on 7 January while
+the leap cycles are in phase. Lalibela, and churches dedicated to
+.IR "Bä'alä Ǝgziabḥer" ,
+keep the canonical 29
+.IR Taḫśaś ;
+.B \-\-holidays
+reports the widely observed date.
+.PP
+Report bugs at
+.UR https://github.com/mitegab/pagumie/issues
+.UE .
+.SH SEE ALSO
+.BR date (1),
+.BR cal (1),
+.BR strftime (3).
+.PP
+Reingold, E. M. and Dershowitz, N.,
+.IR "Calendrical Calculations: The Ultimate Edition" ,
+Cambridge University Press, 2018, chapter 4.
+.SH AUTHORS
+The pagumie contributors.

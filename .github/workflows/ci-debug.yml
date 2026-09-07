@@ -1,0 +1,74 @@
+# TEMPORARY: mirrors build output into issue #1 so it can be read through the
+# GitHub API. Removed before the branch is finalised; see issue #1.
+name: ci-debug
+
+on:
+  push:
+    branches: ["arena/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Run everything, capture output
+        id: run
+        continue-on-error: true
+        run: |
+          set +e
+          exec > >(tee /tmp/out.txt) 2>&1
+          echo "===== cargo build --workspace --all-targets ====="
+          cargo build --workspace --all-targets
+          echo "BUILD_EXIT=$?"
+          echo "===== cargo test --workspace --all-targets ====="
+          cargo test --workspace --all-targets
+          echo "TEST_EXIT=$?"
+          echo "===== cargo test --workspace --doc ====="
+          cargo test --workspace --doc
+          echo "DOCTEST_EXIT=$?"
+          echo "===== cargo clippy --workspace --all-targets --all-features ====="
+          cargo clippy --workspace --all-targets --all-features -- -D warnings
+          echo "CLIPPY_EXIT=$?"
+          echo "===== cargo fmt --check ====="
+          cargo fmt --all -- --check
+          echo "FMT_EXIT=$?"
+          exit 0
+      - name: Post to issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY' > /tmp/body.md
+          import re
+          raw = open('/tmp/out.txt', errors='replace').read()
+          # Keep the signal: section headers, exit codes, errors, warnings,
+          # test failures and their context.
+          keep = []
+          lines = raw.splitlines()
+          for i, l in enumerate(lines):
+              if (l.startswith('=====') or re.match(r'^(error|warning)', l)
+                      or '_EXIT=' in l or l.startswith('   -->') or l.startswith('  -->')
+                      or 'panicked at' in l or l.startswith('test result:')
+                      or l.startswith('failures:') or l.startswith('    ') and 'assert' in l
+                      or l.startswith('---- ') or 'left:' in l or 'right:' in l
+                      or l.startswith('Diff <') or l.startswith('+') and len(l) < 120
+                      or l.startswith('-') and len(l) < 120):
+                  keep.append(l)
+          out = '\n'.join(keep)
+          if len(out) > 55000:
+              out = out[:20000] + '\n...[snip]...\n' + out[-35000:]
+          print('### run %s' % __import__('os').environ.get('GITHUB_RUN_ID', '?'))
+          print('```')
+          print(out)
+          print('```')
+          PY
+          gh issue comment 1 --repo "$GITHUB_REPOSITORY" --body-file /tmp/body.md

@@ -32,6 +32,7 @@
 //! | Day arithmetic | [`ethiopic`], [`gregorian`], [`julian`], [`rata_die`] | always |
 //! | Era handling (Amete Mihret / Amete Alem) | [`era`] | always |
 //! | Names and Ge'ez numerals | [`names`] | `alloc` for numerals |
+//! | Baḥire Ḥasab computus and holidays | [`bahire_hasab`], [`holidays`] | always |
 //!
 //! ## Quick start
 //!
@@ -72,10 +73,12 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+pub mod bahire_hasab;
 pub mod era;
 pub mod error;
 pub mod ethiopic;
 pub mod gregorian;
+pub mod holidays;
 pub mod julian;
 pub mod names;
 pub mod rata_die;
@@ -83,10 +86,12 @@ pub mod weekday;
 
 mod parse;
 
+pub use bahire_hasab::{BahireHasab, MovableFeast};
 pub use era::Era;
 pub use error::{Error, Result};
 pub use ethiopic::{EthiopianDate, Month};
 pub use gregorian::GregorianDate;
+pub use holidays::Holiday;
 pub use julian::JulianDate;
 pub use rata_die::RataDie;
 pub use weekday::Weekday;

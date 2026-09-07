@@ -118,11 +118,7 @@ impl Month {
             11 => Self::Hamle,
             12 => Self::Nehase,
             13 => Self::Pagume,
-            _ => {
-                return Err(Error::MonthOutOfRange {
-                    month: n as i64,
-                })
-            }
+            _ => return Err(Error::MonthOutOfRange { month: n as i64 }),
         })
     }
 
@@ -335,7 +331,10 @@ impl EthiopianDate {
     pub const fn to_rata_die(self) -> RataDie {
         let y = self.year as i64;
         RataDie::new(
-            ETHIOPIC_EPOCH + 365 * (y - 1) + y.div_euclid(4) + 30 * (self.month as i64 - 1)
+            ETHIOPIC_EPOCH
+                + 365 * (y - 1)
+                + y.div_euclid(4)
+                + 30 * (self.month as i64 - 1)
                 + self.day as i64
                 - 1,
         )
@@ -647,8 +646,14 @@ mod tests {
 
     #[test]
     fn roundtrip_dense_over_two_millennia() {
-        let start = EthiopianDate::from_ymd(1, 1, 1).unwrap().to_rata_die().get();
-        let end = EthiopianDate::from_ymd(2200, 1, 1).unwrap().to_rata_die().get();
+        let start = EthiopianDate::from_ymd(1, 1, 1)
+            .unwrap()
+            .to_rata_die()
+            .get();
+        let end = EthiopianDate::from_ymd(2200, 1, 1)
+            .unwrap()
+            .to_rata_die()
+            .get();
         for rd in start..end {
             let d = EthiopianDate::from_rata_die(RataDie::new(rd)).unwrap();
             assert_eq!(d.to_rata_die().get(), rd, "roundtrip failed at rd={rd}");
@@ -659,8 +664,14 @@ mod tests {
 
     #[test]
     fn roundtrip_before_the_epoch() {
-        let start = EthiopianDate::from_ymd(-500, 1, 1).unwrap().to_rata_die().get();
-        let end = EthiopianDate::from_ymd(30, 1, 1).unwrap().to_rata_die().get();
+        let start = EthiopianDate::from_ymd(-500, 1, 1)
+            .unwrap()
+            .to_rata_die()
+            .get();
+        let end = EthiopianDate::from_ymd(30, 1, 1)
+            .unwrap()
+            .to_rata_die()
+            .get();
         for rd in start..end {
             let d = EthiopianDate::from_rata_die(RataDie::new(rd)).unwrap();
             assert_eq!(d.to_rata_die().get(), rd);

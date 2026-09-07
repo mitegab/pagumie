@@ -181,7 +181,10 @@ const fn first_of_month_rd(year: i32, month: u8) -> i64 {
     } else {
         -2
     };
-    JULIAN_EPOCH - 1 + 365 * (y2 - 1) + (y2 - 1).div_euclid(4) + (367 * m - 362).div_euclid(12)
+    JULIAN_EPOCH - 1
+        + 365 * (y2 - 1)
+        + (y2 - 1).div_euclid(4)
+        + (367 * m - 362).div_euclid(12)
         + correction
         + 1
 }
@@ -246,18 +249,25 @@ mod tests {
 
     #[test]
     fn epoch_and_offsets() {
-        assert_eq!(JulianDate::from_ymd(1, 1, 1).unwrap().to_rata_die().get(), -1);
+        assert_eq!(
+            JulianDate::from_ymd(1, 1, 1).unwrap().to_rata_die().get(),
+            -1
+        );
         // The Julian calendar was 13 days behind Gregorian from 1900 to 2100.
         let j = JulianDate::from_ymd(2024, 8, 29).unwrap();
         assert_eq!(
-            GregorianDate::from_rata_die(j.to_rata_die()).unwrap().as_tuple(),
+            GregorianDate::from_rata_die(j.to_rata_die())
+                .unwrap()
+                .as_tuple(),
             (2024, 9, 11)
         );
         // 10 days at the 1582 reform: 1582-10-04 Julian is followed by
         // 1582-10-15 Gregorian.
         let j = JulianDate::from_ymd(1582, 10, 4).unwrap();
         assert_eq!(
-            GregorianDate::from_rata_die(j.to_rata_die() + 1).unwrap().as_tuple(),
+            GregorianDate::from_rata_die(j.to_rata_die() + 1)
+                .unwrap()
+                .as_tuple(),
             (1582, 10, 15)
         );
     }
@@ -265,7 +275,10 @@ mod tests {
     #[test]
     fn no_year_zero() {
         assert_eq!(JulianDate::from_ymd(0, 1, 1), Err(Error::JulianYearZero));
-        assert_eq!("0000-01-01".parse::<JulianDate>(), Err(Error::JulianYearZero));
+        assert_eq!(
+            "0000-01-01".parse::<JulianDate>(),
+            Err(Error::JulianYearZero)
+        );
         // -1 is 1 BCE and immediately precedes 1 CE.
         let bce1 = JulianDate::from_ymd(-1, 12, 31).unwrap();
         let ce1 = JulianDate::from_ymd(1, 1, 1).unwrap();
@@ -285,8 +298,14 @@ mod tests {
 
     #[test]
     fn roundtrip_dense_including_bce() {
-        let start = JulianDate::from_ymd(-200, 1, 1).unwrap().to_rata_die().get();
-        let end = JulianDate::from_ymd(2200, 1, 1).unwrap().to_rata_die().get();
+        let start = JulianDate::from_ymd(-200, 1, 1)
+            .unwrap()
+            .to_rata_die()
+            .get();
+        let end = JulianDate::from_ymd(2200, 1, 1)
+            .unwrap()
+            .to_rata_die()
+            .get();
         for rd in start..end {
             let d = JulianDate::from_rata_die(RataDie::new(rd)).unwrap();
             assert_eq!(d.to_rata_die().get(), rd, "roundtrip failed at rd={rd}");

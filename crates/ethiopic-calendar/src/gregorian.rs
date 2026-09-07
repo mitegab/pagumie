@@ -94,10 +94,7 @@ impl GregorianDate {
             -2
         };
         RataDie::new(
-            GREGORIAN_EPOCH - 1
-                + 365 * prior
-                + prior.div_euclid(4)
-                - prior.div_euclid(100)
+            GREGORIAN_EPOCH - 1 + 365 * prior + prior.div_euclid(4) - prior.div_euclid(100)
                 + prior.div_euclid(400)
                 + (367 * m - 362).div_euclid(12)
                 + correction
@@ -148,10 +145,7 @@ impl GregorianDate {
         } else {
             -2
         };
-        GREGORIAN_EPOCH - 1
-            + 365 * prior
-            + prior.div_euclid(4)
-            - prior.div_euclid(100)
+        GREGORIAN_EPOCH - 1 + 365 * prior + prior.div_euclid(4) - prior.div_euclid(100)
             + prior.div_euclid(400)
             + (367 * m - 362).div_euclid(12)
             + correction
@@ -242,7 +236,13 @@ impl fmt::Display for GregorianDate {
     /// ISO-8601-like: `2024-09-11`, with a sign for negative years.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.year < 0 {
-            write!(f, "-{:04}-{:02}-{:02}", -(self.year as i64), self.month, self.day)
+            write!(
+                f,
+                "-{:04}-{:02}-{:02}",
+                -(self.year as i64),
+                self.month,
+                self.day
+            )
         } else {
             write!(f, "{:04}-{:02}-{:02}", self.year, self.month, self.day)
         }
@@ -287,17 +287,32 @@ mod tests {
 
     #[test]
     fn known_anchors() {
-        assert_eq!(GregorianDate::from_ymd(1, 1, 1).unwrap().to_rata_die().get(), 1);
         assert_eq!(
-            GregorianDate::from_ymd(2000, 1, 1).unwrap().to_rata_die().get(),
+            GregorianDate::from_ymd(1, 1, 1)
+                .unwrap()
+                .to_rata_die()
+                .get(),
+            1
+        );
+        assert_eq!(
+            GregorianDate::from_ymd(2000, 1, 1)
+                .unwrap()
+                .to_rata_die()
+                .get(),
             730_120
         );
         assert_eq!(
-            GregorianDate::from_ymd(1970, 1, 1).unwrap().to_rata_die().get(),
+            GregorianDate::from_ymd(1970, 1, 1)
+                .unwrap()
+                .to_rata_die()
+                .get(),
             719_163
         );
         // Meeus, Astronomical Algorithms, example 7.a
-        assert_eq!(GregorianDate::from_ymd(1957, 10, 4).unwrap().to_jdn(), 2_436_116);
+        assert_eq!(
+            GregorianDate::from_ymd(1957, 10, 4).unwrap().to_jdn(),
+            2_436_116
+        );
     }
 
     #[test]
@@ -325,8 +340,14 @@ mod tests {
 
     #[test]
     fn roundtrip_dense() {
-        let start = GregorianDate::from_ymd(1500, 1, 1).unwrap().to_rata_die().get();
-        let end = GregorianDate::from_ymd(2600, 1, 1).unwrap().to_rata_die().get();
+        let start = GregorianDate::from_ymd(1500, 1, 1)
+            .unwrap()
+            .to_rata_die()
+            .get();
+        let end = GregorianDate::from_ymd(2600, 1, 1)
+            .unwrap()
+            .to_rata_die()
+            .get();
         for rd in start..end {
             let d = GregorianDate::from_rata_die(RataDie::new(rd)).unwrap();
             assert_eq!(d.to_rata_die().get(), rd, "roundtrip failed at rd={rd}");
@@ -335,7 +356,10 @@ mod tests {
 
     #[test]
     fn roundtrip_negative_years() {
-        let start = GregorianDate::from_ymd(-500, 1, 1).unwrap().to_rata_die().get();
+        let start = GregorianDate::from_ymd(-500, 1, 1)
+            .unwrap()
+            .to_rata_die()
+            .get();
         for rd in start..start + 400_000 {
             let d = GregorianDate::from_rata_die(RataDie::new(rd)).unwrap();
             assert_eq!(d.to_rata_die().get(), rd);

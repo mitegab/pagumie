@@ -115,7 +115,10 @@ fn computus_vectors() {
         assert_eq!(i64::from(bh.abektie()), i(r[4]), "abektie {year}");
         assert_eq!(i64::from(bh.metqi()), i(r[5]), "metqi {year}");
         assert_eq!(
-            (i64::from(bh.beale_metqi().month()), i64::from(bh.beale_metqi().day())),
+            (
+                i64::from(bh.beale_metqi().month()),
+                i64::from(bh.beale_metqi().day())
+            ),
             (i(r[6]), i(r[7])),
             "beale metqi {year}"
         );

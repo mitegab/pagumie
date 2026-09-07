@@ -33,6 +33,7 @@
 //! | Era handling (Amete Mihret / Amete Alem) | [`era`] | always |
 //! | Names and Ge'ez numerals | [`names`] | `alloc` for numerals |
 //! | Baḥire Ḥasab computus and holidays | [`bahire_hasab`], [`holidays`] | always |
+//! | Ethiopian clock time (dawn-based, 12-hour) | [`clock`] | always, separate type |
 //!
 //! ## Quick start
 //!
@@ -74,6 +75,7 @@
 extern crate alloc;
 
 pub mod bahire_hasab;
+pub mod clock;
 pub mod era;
 pub mod error;
 pub mod ethiopic;
@@ -87,6 +89,7 @@ pub mod weekday;
 mod parse;
 
 pub use bahire_hasab::{BahireHasab, MovableFeast};
+pub use clock::{DayStart, EthiopianDateTime, EthiopianTime, Period};
 pub use era::Era;
 pub use error::{Error, Result};
 pub use ethiopic::{EthiopianDate, Month};

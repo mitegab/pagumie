@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/ethiopic-calendar"]
+members = ["crates/ethiopic-calendar", "crates/ethiopic-ffi"]
 exclude = ["fuzz"]
 
 [workspace.package]
@@ -16,6 +16,7 @@ categories = ["date-and-time", "internationalization", "no-std"]
 
 [workspace.dependencies]
 ethiopic-calendar = { path = "crates/ethiopic-calendar", version = "0.1.0" }
+ethiopic-ffi = { path = "crates/ethiopic-ffi", version = "0.1.0" }
 
 [profile.release]
 opt-level = 3

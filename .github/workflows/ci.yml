@@ -129,3 +129,25 @@ jobs:
         run: python3 reference/gen_vectors.py
       - name: They must match what is committed
         run: git diff --exit-code -- crates/ethiopic-calendar/tests/data
+
+  cabi:
+    name: C ABI header and example
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build the shared library and regenerate the header
+        run: ETHIOPIC_UPDATE_HEADER=1 cargo build -p ethiopic-ffi --release
+      - name: The committed header must match the source
+        run: git diff --exit-code -- crates/ethiopic-ffi/include/ethiopic.h
+      - name: Compile and run the C example against libethiopic.so
+        run: |
+          cc -Wall -Wextra -Werror -I crates/ethiopic-ffi/include \
+             crates/ethiopic-ffi/examples/demo.c \
+             -L target/release -lethiopic -o /tmp/demo
+          LD_LIBRARY_PATH=target/release /tmp/demo
+      - name: Check the exported symbol table
+        run: |
+          nm -D --defined-only target/release/libethiopic.so | grep -c ' T eth_'
+          ! nm -D --defined-only target/release/libethiopic.so | grep -q ' T rust_'

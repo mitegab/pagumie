@@ -32,6 +32,7 @@
 //! | Day arithmetic | [`ethiopic`], [`gregorian`], [`julian`], [`rata_die`] | always |
 //! | Era handling (Amete Mihret / Amete Alem) | [`era`] | always |
 //! | Names and Ge'ez numerals | [`names`] | `alloc` for numerals |
+//! | `strftime`-style formatting | [`format`] | `alloc` |
 //! | Baḥire Ḥasab computus and holidays | [`bahire_hasab`], [`holidays`] | always |
 //! | Ethiopian clock time (dawn-based, 12-hour) | [`clock`] | always, separate type |
 //!
@@ -85,6 +86,9 @@ pub mod julian;
 pub mod names;
 pub mod rata_die;
 pub mod weekday;
+
+#[cfg(feature = "alloc")]
+pub mod format;
 
 mod parse;
 

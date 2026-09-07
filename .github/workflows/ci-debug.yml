@@ -34,6 +34,7 @@ jobs:
 
       - name: Run the suite, capturing each command separately
         run: |
+          set +e
           mkdir -p /tmp/logs
           run_step() {
             name="$1"; shift
@@ -45,6 +46,7 @@ jobs:
           run_step doctest cargo test --workspace --doc
           run_step clippy cargo clippy --workspace --all-targets --all-features -- -D warnings
           run_step nostd cargo build -p ethiopic-calendar --no-default-features
+          RUSTDOCFLAGS="-D warnings" run_step doc cargo doc --workspace --all-features --no-deps
           true
 
       - name: Post results to issue #1
@@ -57,7 +59,7 @@ jobs:
           run = os.environ.get('GITHUB_RUN_ID', '?')
           sha = os.environ.get('GITHUB_SHA', '?')[:8]
           print(f'### run {run} @ {sha}')
-          order = ['build', 'test', 'doctest', 'clippy', 'nostd']
+          order = ['build', 'test', 'doctest', 'clippy', 'nostd', 'doc']
           budget = 55000
           bodies = []
           for name in order:

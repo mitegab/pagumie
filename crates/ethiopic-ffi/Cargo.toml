@@ -1,0 +1,35 @@
+[package]
+name = "ethiopic-ffi"
+description = "C ABI for the ethiopic-calendar crate: libethiopic.so, a C header, and a strftime-style formatter other programs can link against."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories = ["date-and-time", "external-ffi-bindings"]
+
+[lib]
+name = "ethiopic"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+ethiopic-calendar = { workspace = true, features = ["std"] }
+
+[build-dependencies]
+cbindgen = { version = "0.27", default-features = false }
+
+[lints.rust]
+missing_docs = "warn"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+missing_safety_doc = "warn"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+module_name_repetitions = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_lossless = "allow"

@@ -76,12 +76,12 @@ def coptic_from_fixed(date):
     return (year, month, day)
 
 def orthodox_easter_rd(g_year):
-    """Meeus/Julian-calendar Paschal computus, returned as R.D."""
+    """Meeus Julian-calendar paschal computus (Astronomical Algorithms, ch. 8),
+    returned as R.D. This is the independent cross-check for Bahire Hasab."""
     shifted_epact = (14 + 11 * (g_year % 19)) % 30
     j_year = g_year if g_year > 0 else g_year - 1
     paschal_moon = fixed_from_julian(j_year, 4, 19) - shifted_epact
-    # Sunday strictly after the paschal moon
-    return paschal_moon + 7 - ((paschal_moon + 7 - 6) % 7 if False else 0) if False else kday_after(0, paschal_moon)
+    return kday_after(0, paschal_moon)  # the Sunday strictly after
 
 def day_of_week_from_fixed(date):
     return date % 7  # 0 = Sunday

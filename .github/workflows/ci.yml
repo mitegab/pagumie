@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust: [stable, beta, "1.70"]
+        rust: [stable, beta, "1.74"]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
@@ -83,3 +83,49 @@ jobs:
         run: cargo doc --workspace --all-features --no-deps
         env:
           RUSTDOCFLAGS: "-D warnings"
+
+  fuzz:
+    name: fuzz (short run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+      - name: Fuzz round-trip identities
+        run: cargo fuzz run roundtrip -- -runs=200000 -max_total_time=90
+        working-directory: .
+      - name: Fuzz the parser
+        run: cargo fuzz run parse -- -runs=200000 -max_total_time=60
+      - name: Fuzz the formatter
+        run: cargo fuzz run format -- -runs=200000 -max_total_time=60
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-artifacts
+          path: fuzz/artifacts
+
+  bench:
+    name: benchmarks compile and run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Smoke-run the benchmarks
+        run: cargo bench -p ethiopic-calendar -- --test
+
+  vectors:
+    name: test vectors are reproducible
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Regenerate vectors from the Python reference
+        run: python3 reference/gen_vectors.py
+      - name: They must match what is committed
+        run: git diff --exit-code -- crates/ethiopic-calendar/tests/data

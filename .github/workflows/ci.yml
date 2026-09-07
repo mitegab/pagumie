@@ -151,3 +151,52 @@ jobs:
         run: |
           nm -D --defined-only target/release/libethiopic.so | grep -c ' T eth_'
           ! nm -D --defined-only target/release/libethiopic.so | grep -q ' T rust_'
+
+  cli:
+    name: CLI, man page and completions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install shells and roff tools
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh fish groff man-db
+      - name: End-to-end CLI tests
+        run: cargo test -p ethdate --all-targets
+      - name: Smoke-test the installed binary
+        run: |
+          set -euo pipefail
+          cargo build -p ethdate --release
+          BIN=target/release/ethdate
+          $BIN --version
+          test "$($BIN -F gregorian --iso 2024-09-11)" = "2017-01-01"
+          test "$($BIN -g --iso 2015-13-06)" = "2023-09-11"
+          $BIN --holidays 2017 --locale en
+          $BIN --computus 2017
+          $BIN --year 2017 --locale en | head -20
+          $BIN --waybar 2017-01-01
+          seq 0 6 | sed 's/^/+/' | $BIN - --iso
+          $BIN --holidays | head -1        # a broken pipe must not be an error
+      - name: The man page must be free of roff warnings
+        run: |
+          set -euo pipefail
+          groff -man -Tutf8 -ww -z crates/ethdate/man/ethdate.1 2>err.txt || true
+          if [ -s err.txt ]; then echo "roff warnings:"; cat err.txt; exit 1; fi
+          man --warnings -E UTF-8 -l crates/ethdate/man/ethdate.1 > /dev/null
+      - name: Completions must be syntactically valid
+        run: |
+          set -euo pipefail
+          bash -n crates/ethdate/completions/ethdate.bash
+          zsh -n crates/ethdate/completions/_ethdate
+          fish -n crates/ethdate/completions/ethdate.fish
+      - name: Every option in --help must be documented in the man page
+        run: |
+          set -euo pipefail
+          missing=0
+          for opt in $(target/release/ethdate --help | grep -oE '^\s+--[a-z-]+|, --[a-z-]+' | grep -oE '\--[a-z-]+' | sort -u); do
+            stripped="${opt#--}"
+            if ! grep -q -- "\\-\\-$stripped" crates/ethdate/man/ethdate.1; then
+              echo "man page does not document $opt"; missing=1
+            fi
+          done
+          exit $missing

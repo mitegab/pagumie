@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/ethiopic-calendar", "crates/ethiopic-ffi"]
+members = ["crates/ethiopic-calendar", "crates/ethiopic-ffi", "crates/ethdate"]
 exclude = ["fuzz"]
 
 [workspace.package]

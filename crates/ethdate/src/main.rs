@@ -311,9 +311,7 @@ fn resolve(
     }
 
     let date = match o.from {
-        Calendar::Ethiopic => s
-            .parse::<EthiopianDate>()
-            .map_err(|e| e.to_string())?,
+        Calendar::Ethiopic => s.parse::<EthiopianDate>().map_err(|e| e.to_string())?,
         Calendar::Gregorian => {
             let g = s.parse::<GregorianDate>().map_err(|e| e.to_string())?;
             EthiopianDate::from_gregorian(g).map_err(|e| e.to_string())?
@@ -377,7 +375,10 @@ mod tests {
             (2018, 1, 1)
         );
         assert_eq!(
-            resolve("yesterday", &o, &t, 10_800).unwrap().date.as_tuple(),
+            resolve("yesterday", &o, &t, 10_800)
+                .unwrap()
+                .date
+                .as_tuple(),
             (2017, 13, 5)
         );
         assert_eq!(
@@ -506,6 +507,8 @@ mod tests {
         o.action = Action::Version;
         let mut buf = Vec::new();
         assert_eq!(dispatch(&o, &mut buf), EXIT_OK);
-        assert!(String::from_utf8(buf).unwrap().contains(env!("CARGO_PKG_VERSION")));
+        assert!(String::from_utf8(buf)
+            .unwrap()
+            .contains(env!("CARGO_PKG_VERSION")));
     }
 }

@@ -148,9 +148,8 @@ fn read_header(d: &[u8]) -> io::Result<Header> {
     if d.len() < 44 || &d[..4] != b"TZif" {
         return Err(bad("not a TZif file"));
     }
-    let u32at = |o: usize| -> usize {
-        u32::from_be_bytes([d[o], d[o + 1], d[o + 2], d[o + 3]]) as usize
-    };
+    let u32at =
+        |o: usize| -> usize { u32::from_be_bytes([d[o], d[o + 1], d[o + 2], d[o + 3]]) as usize };
     Ok(Header {
         version: d[4],
         isutcnt: u32at(20),
@@ -219,9 +218,7 @@ fn parse_tzif(d: &[u8], timestamp: i64) -> io::Result<LocalOffset> {
         }
         match idx {
             Some(i) => i,
-            None => (0..h.typecnt)
-                .find(|&t| types[t * 6 + 4] == 0)
-                .unwrap_or(0),
+            None => (0..h.typecnt).find(|&t| types[t * 6 + 4] == 0).unwrap_or(0),
         }
     };
     if type_index >= h.typecnt {

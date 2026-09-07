@@ -84,7 +84,10 @@ fn unknown_specifiers_are_visible_rather_than_dropped() {
 
 #[test]
 fn reads_dates_from_standard_input() {
-    let r = run_with_stdin(&["-", "--iso", "-g"], "2017-01-01\n2017-13-05\n2018-01-01\n");
+    let r = run_with_stdin(
+        &["-", "--iso", "-g"],
+        "2017-01-01\n2017-13-05\n2018-01-01\n",
+    );
     assert_eq!(r.code, 0, "{}", r.stderr);
     assert_eq!(r.stdout, "2024-09-11\n2025-09-10\n2025-09-11\n");
 }
@@ -125,11 +128,7 @@ fn is_holiday_behaves_like_test() {
     assert_eq!(no.code, 1);
     let named = run(&["--is-holiday", "--locale", "en", "2017-04-29"]);
     assert_eq!(named.code, 0);
-    assert!(
-        named.stdout.contains("Christmas"),
-        "{}",
-        named.stdout
-    );
+    assert!(named.stdout.contains("Christmas"), "{}", named.stdout);
 }
 
 #[test]

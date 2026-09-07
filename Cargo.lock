@@ -195,6 +195,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ethdate"
+version = "0.1.0"
+dependencies = [
+ "ethiopic-calendar",
+]
+
+[[package]]
 name = "ethiopic-calendar"
 version = "0.1.0"
 dependencies = [

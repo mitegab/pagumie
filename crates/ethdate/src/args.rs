@@ -612,10 +612,32 @@ mod tests {
     fn help_lists_every_long_option_the_parser_accepts() {
         // Keeps the help text honest as options are added.
         for opt in [
-            "--date", "--format", "--from", "--to", "--gregorian", "--iso", "--json", "--waybar",
-            "--polybar", "--locale", "--era", "--day-start", "--utc", "--offset", "--time",
-            "--calendar", "--year", "--holidays", "--computus", "--is-holiday", "--stdin",
-            "--null", "--quiet", "--no-color", "--help", "--version",
+            "--date",
+            "--format",
+            "--from",
+            "--to",
+            "--gregorian",
+            "--iso",
+            "--json",
+            "--waybar",
+            "--polybar",
+            "--locale",
+            "--era",
+            "--day-start",
+            "--utc",
+            "--offset",
+            "--time",
+            "--calendar",
+            "--year",
+            "--holidays",
+            "--computus",
+            "--is-holiday",
+            "--stdin",
+            "--null",
+            "--quiet",
+            "--no-color",
+            "--help",
+            "--version",
         ] {
             assert!(HELP.contains(opt), "help text does not mention {opt}");
         }

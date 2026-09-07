@@ -29,7 +29,12 @@ fn weekday_heading(locale: Locale) -> String {
         let cell = match locale {
             // The Amharic names all begin with a distinct character, which is
             // exactly what a two-column heading needs.
-            Locale::Amharic => w.amharic().chars().next().map(String::from).unwrap_or_default(),
+            Locale::Amharic => w
+                .amharic()
+                .chars()
+                .next()
+                .map(String::from)
+                .unwrap_or_default(),
             Locale::Latin => w.english_abbrev().chars().take(2).collect(),
         };
         s.push_str(&format!("{cell:>2} "));
@@ -74,10 +79,7 @@ pub fn month_block(year: i32, month: u8, style: Style) -> Result<Vec<String>> {
     while lines.len() < 8 {
         lines.push(String::new());
     }
-    Ok(lines
-        .into_iter()
-        .map(|l| pad_to(&l, BLOCK_WIDTH))
-        .collect())
+    Ok(lines.into_iter().map(|l| pad_to(&l, BLOCK_WIDTH)).collect())
 }
 
 /// A single month, as printable text.
@@ -179,7 +181,10 @@ mod tests {
     fn pagume_is_a_real_month_with_five_or_six_days() {
         let ordinary = month(2016, 13, plain()).unwrap();
         assert!(ordinary.contains(" 5"));
-        assert!(!ordinary.contains(" 6"), "2016 is not a leap year:\n{ordinary}");
+        assert!(
+            !ordinary.contains(" 6"),
+            "2016 is not a leap year:\n{ordinary}"
+        );
         let leap = month(2015, 13, plain()).unwrap();
         assert!(leap.contains(" 6"), "2015 is a leap year:\n{leap}");
     }
@@ -210,7 +215,11 @@ mod tests {
     fn the_year_view_shows_all_thirteen_months() {
         let text = year(2017, plain()).unwrap();
         for m in ethiopic::ALL_MONTHS {
-            assert!(text.contains(m.latin()), "year view is missing {}", m.latin());
+            assert!(
+                text.contains(m.latin()),
+                "year view is missing {}",
+                m.latin()
+            );
         }
     }
 

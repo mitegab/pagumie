@@ -128,11 +128,14 @@ fn json(r: &Resolved, o: &Options) -> Result<String> {
     s.push_str(&format!(",\"unix\":{}", d.to_unix_days() * 86_400));
     s.push_str(&format!(
         ",\"formatted\":{}",
-        quoted(&text(r, &Options {
-            output: Output::Text,
-            to: Calendar::Ethiopic,
-            ..o.clone()
-        })?)
+        quoted(&text(
+            r,
+            &Options {
+                output: Output::Text,
+                to: Calendar::Ethiopic,
+                ..o.clone()
+            }
+        )?)
     ));
     match holiday {
         Some(h) => s.push_str(&format!(
@@ -166,13 +169,10 @@ fn json(r: &Resolved, o: &Options) -> Result<String> {
 /// and `class` keys; `class` drives the CSS, so holidays can be styled.
 fn waybar(r: &Resolved, o: &Options) -> Result<String> {
     let d = r.date;
-    let text_fmt = o
-        .format
-        .clone()
-        .unwrap_or_else(|| match o.locale {
-            Locale::Amharic => "%-d %B %Y".to_string(),
-            Locale::Latin => "%-d %b %Y".to_string(),
-        });
+    let text_fmt = o.format.clone().unwrap_or_else(|| match o.locale {
+        Locale::Amharic => "%-d %B %Y".to_string(),
+        Locale::Latin => "%-d %b %Y".to_string(),
+    });
     let text = match &r.datetime {
         Some(dt) => format_datetime(dt, &text_fmt, o.locale),
         None => format_date(d, &text_fmt, o.locale),
@@ -307,7 +307,11 @@ pub fn holidays_table(year: i32, o: &Options) -> Result<String> {
     let mut out = String::new();
     let name_width = rows
         .iter()
-        .map(|(_, am, en, _)| if o.locale == Locale::Amharic { am } else { en }.chars().count())
+        .map(|(_, am, en, _)| {
+            if o.locale == Locale::Amharic { am } else { en }
+                .chars()
+                .count()
+        })
         .max()
         .unwrap_or(0);
     for (d, am, en, public) in rows {
@@ -318,7 +322,11 @@ pub fn holidays_table(year: i32, o: &Options) -> Result<String> {
             d,
             d.to_gregorian(),
             "",
-            if public { "public holiday" } else { "observance" },
+            if public {
+                "public holiday"
+            } else {
+                "observance"
+            },
             pad = pad
         ));
     }
@@ -500,7 +508,10 @@ mod tests {
         let t = holidays_table(2017, &o).unwrap();
         let lines: Vec<&str> = t.lines().collect();
         assert_eq!(lines.len(), ALL_HOLIDAYS.len());
-        let dates: Vec<&str> = lines.iter().map(|l| l.split_whitespace().next().unwrap()).collect();
+        let dates: Vec<&str> = lines
+            .iter()
+            .map(|l| l.split_whitespace().next().unwrap())
+            .collect();
         let mut sorted = dates.clone();
         sorted.sort_unstable();
         assert_eq!(dates, sorted, "holidays must be listed in date order");

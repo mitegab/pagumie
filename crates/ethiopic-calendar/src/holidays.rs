@@ -284,7 +284,11 @@ mod tests {
             bh.feast(MovableFeast::Tinsae).unwrap()
         );
         assert_eq!(
-            Holiday::GoodFriday.date(2017).unwrap().to_gregorian().as_tuple(),
+            Holiday::GoodFriday
+                .date(2017)
+                .unwrap()
+                .to_gregorian()
+                .as_tuple(),
             (2025, 4, 18)
         );
     }

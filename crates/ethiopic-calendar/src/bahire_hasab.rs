@@ -412,7 +412,10 @@ mod tests {
         for year in 1..2000 {
             let bh = BahireHasab::new(year).unwrap();
             let sum = u16::from(bh.abektie()) + u16::from(bh.metqi());
-            assert!(sum == 30 || sum == 0, "year {year}: abektie + metqi = {sum}");
+            assert!(
+                sum == 30 || sum == 0,
+                "year {year}: abektie + metqi = {sum}"
+            );
         }
     }
 
@@ -483,7 +486,10 @@ mod tests {
         for (ec, greg) in cases {
             let bh = BahireHasab::new(ec).unwrap();
             assert_eq!(
-                bh.feast(MovableFeast::Tinsae).unwrap().to_gregorian().as_tuple(),
+                bh.feast(MovableFeast::Tinsae)
+                    .unwrap()
+                    .to_gregorian()
+                    .as_tuple(),
                 greg,
                 "Fasika of {ec} E.C."
             );

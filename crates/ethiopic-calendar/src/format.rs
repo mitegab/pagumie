@@ -301,7 +301,10 @@ mod tests {
         // Meskerem 1, 2018 = Thursday 11 September 2025.
         assert_eq!(format_date(d(), "%A", Locale::Amharic), "ሐሙስ");
         assert_eq!(format_date(d(), "%A", Locale::Latin), "Thursday");
-        assert_eq!(format_date(d(), "%a %q %u %w", Locale::Latin), "Thu Hamus 4 4");
+        assert_eq!(
+            format_date(d(), "%a %q %u %w", Locale::Latin),
+            "Thu Hamus 4 4"
+        );
     }
 
     #[test]
@@ -320,7 +323,10 @@ mod tests {
         assert_eq!(format_date(d(), "%Q", Locale::Amharic), "%Q");
         assert_eq!(format_date(d(), "%-Q", Locale::Amharic), "%-Q");
         assert_eq!(format_date(d(), "a%nb%tc", Locale::Amharic), "a\nb\tc");
-        assert_eq!(format_date(d(), "trailing %", Locale::Amharic), "trailing %");
+        assert_eq!(
+            format_date(d(), "trailing %", Locale::Amharic),
+            "trailing %"
+        );
         assert_eq!(format_date(d(), "", Locale::Amharic), "");
     }
 
@@ -332,8 +338,14 @@ mod tests {
             EAT_UTC_OFFSET_SECONDS,
             DayStart::Dawn,
         );
-        assert_eq!(format_datetime(&dt, "%H:%M:%S", Locale::Amharic), "09:30:05");
-        assert_eq!(format_datetime(&dt, "%I:%M %p", Locale::Amharic), "3:30 ጠዋት");
+        assert_eq!(
+            format_datetime(&dt, "%H:%M:%S", Locale::Amharic),
+            "09:30:05"
+        );
+        assert_eq!(
+            format_datetime(&dt, "%I:%M %p", Locale::Amharic),
+            "3:30 ጠዋት"
+        );
         assert_eq!(format_datetime(&dt, "%K", Locale::Amharic), "03");
         assert_eq!(format_datetime(&dt, "%P", Locale::Amharic), "tewat");
         assert_eq!(format_datetime(&dt, "%Z %z", Locale::Amharic), "EAT +0300");

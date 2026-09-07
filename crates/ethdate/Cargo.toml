@@ -1,0 +1,30 @@
+[package]
+name = "ethdate"
+description = "The Ethiopian calendar on the command line: conversion, formatting, holidays, Bahire Hasab and a cal(1)-style grid, with no runtime dependencies."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories = ["command-line-utilities", "date-and-time", "localization"]
+readme = "README.md"
+
+[[bin]]
+name = "ethdate"
+path = "src/main.rs"
+
+[dependencies]
+ethiopic-calendar = { workspace = true, features = ["std"] }
+
+[lints.rust]
+missing_docs = "warn"
+unsafe_code = "forbid"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"

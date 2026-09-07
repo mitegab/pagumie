@@ -1,0 +1,55 @@
+#compdef ethdate
+# zsh completion for ethdate
+# Install to a directory on $fpath, e.g. /usr/share/zsh/site-functions/_ethdate
+
+_ethdate() {
+    local -a calendars locales eras starts keywords
+    calendars=(
+        'ethiopic:Ethiopian calendar (Amete Mihret)'
+        'gregorian:proleptic Gregorian calendar'
+        'julian:Julian calendar'
+        'jdn:Julian Day Number'
+        'rd:fixed day number (R.D.)'
+        'unix:Unix timestamp'
+    )
+    locales=('am:Amharic script' 'en:Latin script')
+    eras=('am:Amete Mihret' 'aa:Amete Alem')
+    starts=('dawn:day turns at 06:00, traditional' 'midnight:day turns at 00:00, civil')
+    keywords=(now today yesterday tomorrow)
+
+    _arguments -s -S \
+        '(-d --date)'{-d,--date}'[convert DATE]:date:($keywords)' \
+        '(-f --format)'{-f,--format}'[strftime-style format]:format:' \
+        '(-F --from)'{-F,--from}'[read dates in this calendar]:calendar:((${calendars}))' \
+        '(-t --to)'{-t,--to}'[print dates in this calendar]:calendar:((${calendars}))' \
+        '(-g --gregorian)'{-g,--gregorian}'[print Gregorian dates]' \
+        '(-e --ethiopic)'{-e,--ethiopic}'[print Ethiopian dates]' \
+        '--julian[print Julian dates]' \
+        '--jdn[print Julian Day Numbers]' \
+        '--rd[print fixed day numbers]' \
+        '--unix[print Unix timestamps]' \
+        '(-I --iso)'{-I,--iso}'[print bare YYYY-MM-DD]' \
+        '(-j --json)'{-j,--json}'[print JSON]' \
+        '--waybar[print Waybar custom-module JSON]' \
+        '(--polybar --i3blocks --i3status)'{--polybar,--i3blocks,--i3status}'[print one status-bar line]' \
+        '--locale[script for names]:locale:((${locales}))' \
+        '--era[year numbering]:era:((${eras}))' \
+        '--day-start[when a day turns]:when:((${starts}))' \
+        '(-u --utc)'{-u,--utc}'[use UTC]' \
+        '--offset[fixed UTC offset]:offset:(+03:00 +00:00 -05:00)' \
+        '(-T --time)'{-T,--time}'[include the Ethiopian time of day]' \
+        '(-c --calendar)'{-c,--calendar}'[print a month grid]::year:' \
+        '(-y --year)'{-y,--year}'[print a whole year]::year:' \
+        '--holidays[list the holidays of a year]::year:' \
+        '--computus[print the Bahire Hasab table]::year:' \
+        '--is-holiday[exit 0 if the date is a public holiday]' \
+        '(-s --stdin)'{-s,--stdin}'[read dates from standard input]' \
+        '(-0 --null)'{-0,--null}'[NUL-separated records]' \
+        '(-q --quiet)'{-q,--quiet}'[no error messages]' \
+        '--no-color[never colourise]' \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '(-V --version)'{-V,--version}'[show version]' \
+        '*:date:($keywords)'
+}
+
+_ethdate "$@"

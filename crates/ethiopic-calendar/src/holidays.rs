@@ -313,26 +313,46 @@ mod tests {
     fn gregorian_correspondence_drifts_after_2100() {
         // Last Genna on 7 January.
         assert_eq!(
-            Holiday::Genna.observed_date(2091).unwrap().to_gregorian().as_tuple(),
+            Holiday::Genna
+                .observed_date(2091)
+                .unwrap()
+                .to_gregorian()
+                .as_tuple(),
             (2099, 1, 7)
         );
         // 1 March 2100 is skipped in the Gregorian calendar but not in the
         // Ethiopian one, so everything afterwards is a day later.
         assert_eq!(
-            Holiday::Genna.observed_date(2093).unwrap().to_gregorian().as_tuple(),
+            Holiday::Genna
+                .observed_date(2093)
+                .unwrap()
+                .to_gregorian()
+                .as_tuple(),
             (2101, 1, 8)
         );
         assert_eq!(
-            Holiday::Timkat.date(2093).unwrap().to_gregorian().as_tuple(),
+            Holiday::Timkat
+                .date(2093)
+                .unwrap()
+                .to_gregorian()
+                .as_tuple(),
             (2101, 1, 20)
         );
         assert_eq!(
-            Holiday::Enkutatash.date(2093).unwrap().to_gregorian().as_tuple(),
+            Holiday::Enkutatash
+                .date(2093)
+                .unwrap()
+                .to_gregorian()
+                .as_tuple(),
             (2100, 9, 12)
         );
         // Two more centuries, two more days.
         assert_eq!(
-            Holiday::Enkutatash.date(2300).unwrap().to_gregorian().as_tuple(),
+            Holiday::Enkutatash
+                .date(2300)
+                .unwrap()
+                .to_gregorian()
+                .as_tuple(),
             (2307, 9, 15)
         );
     }

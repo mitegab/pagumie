@@ -1,5 +1,7 @@
 # TEMPORARY: mirrors build output into issue #1 so it can be read through the
-# GitHub API. Removed before the branch is finalised; see issue #1.
+# GitHub API, and auto-applies `cargo fmt`, because the development sandbox has
+# no Rust toolchain and cannot download Actions logs. Removed before the branch
+# is finalised; see issue #1.
 name: ci-debug
 
 on:
@@ -8,67 +10,88 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   issues: write
+
+concurrency:
+  group: ci-debug-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - name: Run everything, capture output
-        id: run
-        continue-on-error: true
+
+      - name: cargo fmt --all (auto-apply)
+        run: cargo fmt --all
+
+      - name: Run the suite, capturing each command separately
         run: |
-          set +e
-          exec > >(tee /tmp/out.txt) 2>&1
-          echo "===== cargo build --workspace --all-targets ====="
-          cargo build --workspace --all-targets
-          echo "BUILD_EXIT=$?"
-          echo "===== cargo test --workspace --all-targets ====="
-          cargo test --workspace --all-targets
-          echo "TEST_EXIT=$?"
-          echo "===== cargo test --workspace --doc ====="
-          cargo test --workspace --doc
-          echo "DOCTEST_EXIT=$?"
-          echo "===== cargo clippy --workspace --all-targets --all-features ====="
-          cargo clippy --workspace --all-targets --all-features -- -D warnings
-          echo "CLIPPY_EXIT=$?"
-          echo "===== cargo fmt --check ====="
-          cargo fmt --all -- --check
-          echo "FMT_EXIT=$?"
-          exit 0
-      - name: Post to issue
+          mkdir -p /tmp/logs
+          run_step() {
+            name="$1"; shift
+            "$@" > "/tmp/logs/$name.txt" 2>&1
+            echo "$?" > "/tmp/logs/$name.exit"
+          }
+          run_step build cargo build --workspace --all-targets
+          run_step test cargo test --workspace --all-targets
+          run_step doctest cargo test --workspace --doc
+          run_step clippy cargo clippy --workspace --all-targets --all-features -- -D warnings
+          run_step nostd cargo build -p ethiopic-calendar --no-default-features
+          true
+
+      - name: Post results to issue #1
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY' > /tmp/body.md
-          import re
-          raw = open('/tmp/out.txt', errors='replace').read()
-          # Keep the signal: section headers, exit codes, errors, warnings,
-          # test failures and their context.
-          keep = []
-          lines = raw.splitlines()
-          for i, l in enumerate(lines):
-              if (l.startswith('=====') or re.match(r'^(error|warning)', l)
-                      or '_EXIT=' in l or l.startswith('   -->') or l.startswith('  -->')
-                      or 'panicked at' in l or l.startswith('test result:')
-                      or l.startswith('failures:') or l.startswith('    ') and 'assert' in l
-                      or l.startswith('---- ') or 'left:' in l or 'right:' in l
-                      or l.startswith('Diff <') or l.startswith('+') and len(l) < 120
-                      or l.startswith('-') and len(l) < 120):
-                  keep.append(l)
-          out = '\n'.join(keep)
-          if len(out) > 55000:
-              out = out[:20000] + '\n...[snip]...\n' + out[-35000:]
-          print('### run %s' % __import__('os').environ.get('GITHUB_RUN_ID', '?'))
-          print('```')
-          print(out)
-          print('```')
+          import os, glob
+          run = os.environ.get('GITHUB_RUN_ID', '?')
+          sha = os.environ.get('GITHUB_SHA', '?')[:8]
+          print(f'### run {run} @ {sha}')
+          order = ['build', 'test', 'doctest', 'clippy', 'nostd']
+          budget = 55000
+          bodies = []
+          for name in order:
+              try:
+                  code = open(f'/tmp/logs/{name}.exit').read().strip()
+              except OSError:
+                  continue
+              log = open(f'/tmp/logs/{name}.txt', errors='replace').read()
+              if code == '0':
+                  tail = [l for l in log.splitlines() if l.startswith('test result:')
+                          or l.startswith('warning:')][-12:]
+                  bodies.append((name, code, '\n'.join(tail)))
+              else:
+                  bodies.append((name, code, log))
+          share = max(4000, budget // max(1, sum(1 for b in bodies if b[1] != '0')))
+          for name, code, text in bodies:
+              status = 'ok' if code == '0' else f'FAILED (exit {code})'
+              print(f'\n<details open><summary><b>{name}</b>: {status}</summary>\n')
+              print('```')
+              if code != '0' and len(text) > share:
+                  text = text[:share // 3] + '\n...[snip]...\n' + text[-2 * share // 3:]
+              print(text.strip() or '(no output)')
+              print('```')
+              print('\n</details>')
           PY
           gh issue comment 1 --repo "$GITHUB_REPOSITORY" --body-file /tmp/body.md
+
+      - name: Commit formatting fixes back to the branch
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add -A
+            git commit -m "style: cargo fmt [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi

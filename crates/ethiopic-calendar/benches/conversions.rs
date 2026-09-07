@@ -1,3 +1,5 @@
+#![allow(missing_docs)] // criterion_group! generates an undocumented item.
+
 //! Conversion benchmarks.
 //!
 //! The interesting number is not "how fast is a date conversion" (it is a
@@ -23,7 +25,7 @@ fn sample_rds() -> Vec<i64> {
             state ^= state << 13;
             state ^= state >> 7;
             state ^= state << 17;
-            (state % 1_460_000) as i64 - 200_000
+            i64::try_from(state % 1_460_000).unwrap_or(0) - 200_000
         })
         .collect()
 }

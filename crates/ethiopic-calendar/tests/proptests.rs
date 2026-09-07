@@ -120,10 +120,12 @@ proptest! {
         }
     }
 
-    /// The Ethiopian new year is 11 or 12 September (Gregorian) for the whole
-    /// span in which the two calendars are used side by side.
+    /// The Ethiopian new year is 11 or 12 September (Gregorian) — but only
+    /// while the two leap cycles are in phase, i.e. Gregorian 1900–2099. The
+    /// Ethiopian calendar has no century exception, so 1 March 2100 pushes it
+    /// to 12/13 September. See `holidays::gregorian_correspondence_drifts_after_2100`.
     #[test]
-    fn enkutatash_is_11_or_12_september(year in 1900i32..2100) {
+    fn enkutatash_is_11_or_12_september(year in 1893i32..2092) {
         let g = EthiopianDate::from_ymd(year, 1, 1).unwrap().to_gregorian();
         prop_assert_eq!(g.month(), 9);
         prop_assert!(g.day() == 11 || g.day() == 12);

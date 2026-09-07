@@ -70,30 +70,52 @@ pub const ALL_HOLIDAYS: [Holiday; 10] = [
     Holiday::Fasika,
 ];
 
+/// How a holiday's date is determined.
+///
+/// Modelled as one exhaustive enum rather than two `Option`-returning
+/// accessors so that "fixed or movable" is a fact the type system knows, and
+/// [`Holiday::date`] needs no unreachable branch.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Rule {
+    /// A fixed `(month, day)` in every year.
+    Fixed(u8, u8),
+    /// Derived from the computus.
+    Movable(MovableFeast),
+}
+
 impl Holiday {
+    /// How this holiday's date is determined.
+    #[must_use]
+    pub const fn rule(self) -> Rule {
+        match self {
+            Self::Enkutatash => Rule::Fixed(1, 1),
+            Self::Meskel => Rule::Fixed(1, 17),
+            Self::Genna => Rule::Fixed(4, 29),
+            Self::Timkat => Rule::Fixed(5, 11),
+            Self::AdwaVictoryDay => Rule::Fixed(6, 23),
+            Self::LabourDay => Rule::Fixed(8, 23),
+            Self::PatriotsDay => Rule::Fixed(8, 27),
+            Self::DergDownfallDay => Rule::Fixed(9, 20),
+            Self::GoodFriday => Rule::Movable(MovableFeast::Siklet),
+            Self::Fasika => Rule::Movable(MovableFeast::Tinsae),
+        }
+    }
+
     /// The fixed `(month, day)` of this holiday, or `None` if it is movable.
     #[must_use]
     pub const fn fixed_date(self) -> Option<(u8, u8)> {
-        match self {
-            Self::Enkutatash => Some((1, 1)),
-            Self::Meskel => Some((1, 17)),
-            Self::Genna => Some((4, 29)),
-            Self::Timkat => Some((5, 11)),
-            Self::AdwaVictoryDay => Some((6, 23)),
-            Self::LabourDay => Some((8, 23)),
-            Self::PatriotsDay => Some((8, 27)),
-            Self::DergDownfallDay => Some((9, 20)),
-            Self::GoodFriday | Self::Fasika => None,
+        match self.rule() {
+            Rule::Fixed(m, d) => Some((m, d)),
+            Rule::Movable(_) => None,
         }
     }
 
     /// The movable feast backing this holiday, if any.
     #[must_use]
     pub const fn movable_feast(self) -> Option<MovableFeast> {
-        match self {
-            Self::GoodFriday => Some(MovableFeast::Siklet),
-            Self::Fasika => Some(MovableFeast::Tinsae),
-            _ => None,
+        match self.rule() {
+            Rule::Movable(f) => Some(f),
+            Rule::Fixed(..) => None,
         }
     }
 
@@ -101,14 +123,9 @@ impl Holiday {
     ///
     /// This is the *calendar* date. For Genna, see [`Self::observed_date`].
     pub fn date(self, year: i32) -> Result<EthiopianDate> {
-        match self.fixed_date() {
-            Some((m, d)) => EthiopianDate::from_ymd(year, m, d),
-            None => {
-                let feast = self
-                    .movable_feast()
-                    .expect("a holiday is either fixed or movable");
-                BahireHasab::new(year)?.feast(feast)
-            }
+        match self.rule() {
+            Rule::Fixed(m, d) => EthiopianDate::from_ymd(year, m, d),
+            Rule::Movable(feast) => BahireHasab::new(year)?.feast(feast),
         }
     }
 

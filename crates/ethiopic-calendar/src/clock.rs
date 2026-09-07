@@ -329,7 +329,7 @@ impl EthiopianDateTime {
         let time = EthiopianTime::from_seconds_since_midnight(sod)?;
         let mut rd = RataDie::from_unix_days(day);
         if day_start == DayStart::Dawn && time.is_before_dawn() {
-            rd = rd - 1;
+            rd -= 1;
         }
         Ok(Self {
             date: EthiopianDate::from_rata_die(rd)?,
@@ -368,7 +368,7 @@ impl EthiopianDateTime {
     pub fn to_unix_timestamp(&self) -> i64 {
         let mut rd = self.date.to_rata_die();
         if self.day_start == DayStart::Dawn && self.time.is_before_dawn() {
-            rd = rd + 1;
+            rd += 1;
         }
         rd.to_unix_timestamp() + i64::from(self.time.seconds_since_midnight())
             - i64::from(self.utc_offset_seconds)

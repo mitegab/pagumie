@@ -248,8 +248,7 @@ fn zone_abbrev(utc_offset: Option<i32>) -> &'static str {
     match utc_offset {
         Some(o) if o == crate::clock::EAT_UTC_OFFSET_SECONDS => "EAT",
         Some(0) => "UTC",
-        Some(_) => "",
-        None => "",
+        Some(_) | None => "",
     }
 }
 

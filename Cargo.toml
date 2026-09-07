@@ -1,0 +1,27 @@
+[workspace]
+resolver = "2"
+members = ["crates/ethiopic-calendar"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/mitegab/pagumie"
+homepage = "https://github.com/mitegab/pagumie"
+authors = ["pagumie contributors"]
+keywords = ["ethiopian", "calendar", "date", "geez", "ethiopic"]
+categories = ["date-and-time", "internationalization", "no-std"]
+
+[workspace.dependencies]
+ethiopic-calendar = { path = "crates/ethiopic-calendar", version = "0.1.0" }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.bench]
+lto = true
+codegen-units = 1

@@ -1,0 +1,10 @@
+/target
+**/target
+Cargo.lock.bak
+*.deb
+*.tar.zst
+/dist
+__pycache__/
+*.pyc
+.vscode/
+.idea/

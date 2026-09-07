@@ -73,7 +73,13 @@ impl RataDie {
     ///
     /// Provided because astronomical code usually wants the fractional form and
     /// naive `as f64` casts of a JDN are a classic source of half-day errors.
+    ///
+    /// Beyond about ±2^53 days the `f64` result is no longer exact; that is
+    /// nine quadrillion years and far outside the calendrical range, but it is
+    /// the reason this returns a float only on request rather than being the
+    /// primary representation.
     #[must_use]
+    #[allow(clippy::cast_precision_loss)]
     pub fn to_julian_date_midnight(self) -> f64 {
         self.to_jdn() as f64 - 0.5
     }

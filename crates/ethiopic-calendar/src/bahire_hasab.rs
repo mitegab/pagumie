@@ -398,8 +398,8 @@ mod tests {
     fn parameters_of_2017_ec() {
         let bh = BahireHasab::new(2017).unwrap();
         assert_eq!(bh.amete_alem(), 7517);
-        assert_eq!(bh.medeb(), 7517 % 19);
-        assert_eq!(bh.wenber(), (7517 % 19) as u8 - 1);
+        assert_eq!(i64::from(bh.medeb()), 7517 % 19);
+        assert_eq!(i64::from(bh.wenber()), 7517 % 19 - 1);
         // abektē + meṭq == 30 whenever neither is 0.
         if bh.abektie() != 0 {
             assert_eq!(u16::from(bh.abektie()) + u16::from(bh.metqi()), 30);

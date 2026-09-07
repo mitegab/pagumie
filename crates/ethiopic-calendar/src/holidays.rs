@@ -13,15 +13,27 @@
 //! # Observance versus calendar date
 //!
 //! Genna (Christmas) is the interesting case. Its calendar date is 29 Taḫśaś,
-//! but in years where that would land on 8 January — i.e. when the following
-//! Gregorian year is a leap year — most of the country observes it a day
-//! earlier, on 28 Taḫśaś, so that Genna stays on 7 January. Lalibela, and
-//! churches dedicated to *Bä'alä Ǝgziabḥer*, keep the canonical 29 Taḫśaś.
-//! [`Holiday::date`] gives the calendar date; [`Holiday::observed_date`] applies
-//! the shift.
+//! but in the *year of John* — the year after Luke's leap year, `y mod 4 == 0`
+//! — most of the country observes it a day earlier, on 28 Taḫśaś. Lalibela,
+//! and churches dedicated to *Bä'alä Ǝgziabḥer*, keep the canonical 29 Taḫśaś,
+//! which is why the Lalibela ceremony is a day later than the rest of the
+//! country every fourth year. [`Holiday::date`] gives the calendar date;
+//! [`Holiday::observed_date`] applies the shift.
 //!
 //! Timkat, by contrast, is *not* adjusted: it stays on 11 Ṭərr and therefore
-//! moves between 19 and 20 January in the Gregorian calendar.
+//! moves within the Gregorian calendar.
+//!
+//! # The Gregorian correspondences are not eternal
+//!
+//! "Genna is always 7 January" and "Timkat is 19 or 20 January" are true only
+//! while the Ethiopian and Gregorian leap cycles stay in phase, which is to say
+//! for the Gregorian years 1900–2099. The Ethiopian calendar follows the Julian
+//! rule with no century exception, so 1 March 2100 — a Gregorian leap day that
+//! is skipped and an Ethiopian one that is not — puts them one day further
+//! apart. From then on Genna falls on 8 January, Timkat on 20 January, and
+//! Enkutatash on 12 September. This crate computes the *Ethiopian* dates and
+//! lets the Gregorian correspondence fall where it does; hard-coding
+//! `January 7` is a bug with a due date.
 
 use crate::bahire_hasab::{BahireHasab, MovableFeast};
 use crate::error::Result;
@@ -131,8 +143,8 @@ impl Holiday {
 
     /// The date the holiday is actually observed nationally.
     ///
-    /// Identical to [`Self::date`] except for Genna in the years where
-    /// 29 Taḫśaś would fall on 8 January, in which case it returns 28 Taḫśaś.
+    /// Identical to [`Self::date`] except for Genna in the year of John
+    /// (`year mod 4 == 0`), where it returns 28 Taḫśaś.
     ///
     /// ```
     /// use ethiopic_calendar::holidays::Holiday;
@@ -146,8 +158,7 @@ impl Holiday {
     /// ```
     pub fn observed_date(self, year: i32) -> Result<EthiopianDate> {
         let date = self.date(year)?;
-        let g = date.to_gregorian();
-        if self == Self::Genna && (g.month(), g.day()) == (1, 8) {
+        if self == Self::Genna && year.rem_euclid(4) == 0 {
             return date.sub_days(1);
         }
         Ok(date)
@@ -255,9 +266,11 @@ mod tests {
         }
     }
 
+    /// True for the Gregorian years 1901–2099, and no longer; see the module
+    /// documentation.
     #[test]
-    fn genna_is_always_observed_on_7_january() {
-        for year in 1900..2100 {
+    fn genna_is_observed_on_7_january_while_the_cycles_are_in_phase() {
+        for year in 1893..2092 {
             let observed = Holiday::Genna.observed_date(year).unwrap().to_gregorian();
             assert_eq!(
                 (observed.month(), observed.day()),
@@ -269,7 +282,7 @@ mod tests {
 
     #[test]
     fn genna_calendar_date_is_29_tahsas_except_when_shifted() {
-        for year in 1900..2100 {
+        for year in -2000..4000 {
             let canonical = Holiday::Genna.date(year).unwrap();
             assert_eq!((canonical.month(), canonical.day()), (4, 29));
             let observed = Holiday::Genna.observed_date(year).unwrap();
@@ -282,7 +295,7 @@ mod tests {
 
     #[test]
     fn timkat_is_19_or_20_january() {
-        for year in 1900..2100 {
+        for year in 1893..2092 {
             let g = Holiday::Timkat.date(year).unwrap().to_gregorian();
             assert_eq!(g.month(), 1);
             assert!(
@@ -291,6 +304,37 @@ mod tests {
             );
             assert_eq!(g.day() == 20, year.rem_euclid(4) == 0);
         }
+    }
+
+    /// The Gregorian correspondence drifts by a day at every skipped Gregorian
+    /// century leap day. This is a feature of the calendars, not a bug, and is
+    /// pinned here so that nobody "fixes" it back to a hard-coded 7 January.
+    #[test]
+    fn gregorian_correspondence_drifts_after_2100() {
+        // Last Genna on 7 January.
+        assert_eq!(
+            Holiday::Genna.observed_date(2091).unwrap().to_gregorian().as_tuple(),
+            (2099, 1, 7)
+        );
+        // 1 March 2100 is skipped in the Gregorian calendar but not in the
+        // Ethiopian one, so everything afterwards is a day later.
+        assert_eq!(
+            Holiday::Genna.observed_date(2093).unwrap().to_gregorian().as_tuple(),
+            (2101, 1, 8)
+        );
+        assert_eq!(
+            Holiday::Timkat.date(2093).unwrap().to_gregorian().as_tuple(),
+            (2101, 1, 20)
+        );
+        assert_eq!(
+            Holiday::Enkutatash.date(2093).unwrap().to_gregorian().as_tuple(),
+            (2100, 9, 12)
+        );
+        // Two more centuries, two more days.
+        assert_eq!(
+            Holiday::Enkutatash.date(2300).unwrap().to_gregorian().as_tuple(),
+            (2307, 9, 15)
+        );
     }
 
     #[test]

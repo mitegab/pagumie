@@ -67,7 +67,12 @@ jobs:
                   code = open(f'/tmp/logs/{name}.exit').read().strip()
               except OSError:
                   continue
-              log = open(f'/tmp/logs/{name}.txt', errors='replace').read()
+              raw = open(f'/tmp/logs/{name}.txt', errors='replace').read()
+              skip = ('   Compiling', '    Checking', '   Downloading', '    Updating',
+                      '     Running', '  Downloaded', '     Locking', '      Adding',
+                      '    Blocking', '   Installing', '    Finished', '      Fresh')
+              log = '\n'.join(l for l in raw.splitlines()
+                               if not l.lstrip('\x1b[0-9;m').startswith(tuple(s.strip() for s in skip)))
               if code == '0':
                   tail = [l for l in log.splitlines() if l.startswith('test result:')
                           or l.startswith('warning:')][-12:]

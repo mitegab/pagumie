@@ -109,13 +109,17 @@ pub fn parse_hhmm_offset(s: &str) -> Option<i32> {
     }
     let mut parts = digits.split(':');
     let head = parts.next()?;
-    let (h, m, sec) = if head.len() == 4 && parts.clone().next().is_none() {
-        (head[..2].parse::<i32>().ok()?, head[2..].parse().ok()?, 0)
+    let (h, m, sec): (i32, i32, i32) = if head.len() == 4 && parts.clone().next().is_none() {
+        (
+            head[..2].parse::<i32>().ok()?,
+            head[2..].parse::<i32>().ok()?,
+            0,
+        )
     } else {
         (
             head.parse::<i32>().ok()?,
-            parts.next().unwrap_or("0").parse().ok()?,
-            parts.next().unwrap_or("0").parse().ok()?,
+            parts.next().unwrap_or("0").parse::<i32>().ok()?,
+            parts.next().unwrap_or("0").parse::<i32>().ok()?,
         )
     };
     if !(0..=23).contains(&h) || !(0..=59).contains(&m) || !(0..=59).contains(&sec) {

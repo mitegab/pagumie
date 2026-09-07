@@ -22,9 +22,11 @@ pub struct Resolved {
 
 /// Default format strings, chosen per locale and per whether a time is shown.
 fn default_format(o: &Options, with_time: bool) -> String {
+    // `Era` is #[non_exhaustive]; an era we do not know about falls back to
+    // the plain Amete Mihret marker rather than failing to build.
     let era = match o.era {
-        Era::AmeteMihret => "%N",
         Era::AmeteAlem => "%L ዓ.ዓ.",
+        _ => "%N",
     };
     match (o.locale, with_time) {
         (Locale::Amharic, false) => format!("%A ፣ %-d %B %Y {era}"),

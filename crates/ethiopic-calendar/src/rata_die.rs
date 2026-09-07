@@ -267,7 +267,8 @@ mod tests {
         assert_eq!(RataDie::new(1).weekday(), Weekday::Monday);
         assert_eq!(RataDie::new(0).weekday(), Weekday::Sunday);
         assert_eq!(RataDie::new(-1).weekday(), Weekday::Saturday);
-        assert_eq!(RataDie::new(-7).weekday(), Weekday::Saturday);
+        assert_eq!(RataDie::new(-7).weekday(), Weekday::Sunday);
+        assert_eq!(RataDie::new(-8).weekday(), Weekday::Saturday);
     }
 
     #[test]

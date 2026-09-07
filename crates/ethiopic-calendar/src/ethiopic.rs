@@ -688,9 +688,12 @@ mod tests {
         assert_eq!(d.add_months(1).unwrap().as_tuple(), (2016, 13, 5));
         let d = EthiopianDate::from_ymd(2015, 12, 30).unwrap();
         assert_eq!(d.add_months(1).unwrap().as_tuple(), (2015, 13, 6));
-        // Rolling over the year boundary.
+        // Rolling over the year boundary: the year has THIRTEEN months, so
+        // "minus twelve months" is not "minus one year".
         assert_eq!(d.add_months(2).unwrap().as_tuple(), (2016, 1, 30));
-        assert_eq!(d.add_months(-12).unwrap().as_tuple(), (2014, 12, 30));
+        assert_eq!(d.add_months(-12).unwrap().as_tuple(), (2014, 13, 5));
+        assert_eq!(d.add_months(-13).unwrap().as_tuple(), (2014, 12, 30));
+        assert_eq!(d.add_months(13).unwrap().as_tuple(), (2016, 12, 30));
         // Leap day + 1 year clamps.
         let p = EthiopianDate::from_ymd(2015, 13, 6).unwrap();
         assert_eq!(p.add_years(1).unwrap().as_tuple(), (2016, 13, 5));

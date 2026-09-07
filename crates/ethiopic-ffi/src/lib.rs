@@ -784,7 +784,10 @@ unsafe fn write_out(s: &str, buf: *mut c_char, len: usize) -> isize {
     }
     let copy = needed.min(len - 1);
     // Never split a UTF-8 sequence: back off to a character boundary.
-    let copy = (0..=copy).rev().find(|&i| s.is_char_boundary(i)).unwrap_or(0);
+    let copy = (0..=copy)
+        .rev()
+        .find(|&i| s.is_char_boundary(i))
+        .unwrap_or(0);
     unsafe {
         core::ptr::copy_nonoverlapping(s.as_ptr().cast::<c_char>(), buf, copy);
         buf.add(copy).write(0);
@@ -938,15 +941,8 @@ mod tests {
             day: 1,
         };
         let fmt = CString::new("%Y-%m-%d").unwrap();
-        let needed = unsafe {
-            eth_format(
-                &d,
-                fmt.as_ptr(),
-                EthLocale::Latin,
-                core::ptr::null_mut(),
-                0,
-            )
-        };
+        let needed =
+            unsafe { eth_format(&d, fmt.as_ptr(), EthLocale::Latin, core::ptr::null_mut(), 0) };
         assert_eq!(needed, 10);
         let mut buf = [0i8; 32];
         let n = unsafe {
@@ -1006,7 +1002,10 @@ mod tests {
             month: 0,
             day: 0,
         };
-        assert_eq!(unsafe { eth_to_gregorian(&c.fasika, &mut g) }, EthStatus::Ok);
+        assert_eq!(
+            unsafe { eth_to_gregorian(&c.fasika, &mut g) },
+            EthStatus::Ok
+        );
         assert_eq!((g.year, g.month, g.day), (2025, 4, 20));
     }
 
@@ -1016,10 +1015,7 @@ mod tests {
         let b = eth_month_name(13, EthLocale::Latin);
         assert!(!a.is_null());
         assert_eq!(a, b, "repeated calls must not leak a new string each time");
-        assert_eq!(
-            unsafe { CStr::from_ptr(a) }.to_str().unwrap(),
-            "Pagume"
-        );
+        assert_eq!(unsafe { CStr::from_ptr(a) }.to_str().unwrap(), "Pagume");
         assert!(eth_month_name(14, EthLocale::Latin).is_null());
         assert_eq!(
             unsafe { CStr::from_ptr(eth_strerror(EthStatus::JulianYearZero)) }

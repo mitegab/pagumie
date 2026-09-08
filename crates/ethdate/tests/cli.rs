@@ -256,7 +256,7 @@ fn a_broken_pipe_is_not_an_error() {
     let status = producer.wait().expect("wait");
     let _ = writer.join();
     assert!(
-        matches!(status.code(), Some(0) | Some(1) | None),
+        matches!(status.code(), Some(0 | 1) | None),
         "unexpected status {status:?}"
     );
 }

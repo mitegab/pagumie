@@ -45,6 +45,9 @@ jobs:
           run_step test cargo test --workspace --all-targets
           run_step doctest cargo test --workspace --doc
           run_step clippy cargo clippy --workspace --all-targets --all-features -- -D warnings
+          # Same command without `-D warnings`: a single pass that lists every
+          # remaining lint instead of stopping the build at the first one.
+          run_step clippy_warn cargo clippy --workspace --all-targets --all-features
           run_step nostd cargo build -p ethiopic-calendar --no-default-features
           RUSTDOCFLAGS="-D warnings" run_step doc cargo doc --workspace --all-features --no-deps
           true
@@ -58,8 +61,10 @@ jobs:
           import os, glob
           run = os.environ.get('GITHUB_RUN_ID', '?')
           sha = os.environ.get('GITHUB_SHA', '?')[:8]
-          print(f'### run {run} @ {sha}')
-          order = ['build', 'test', 'doctest', 'clippy', 'nostd', 'doc']
+          print(f'### probe run {run} @ {sha}')
+          order = ['build', 'test', 'doctest', 'clippy', 'nostd', 'doc', 'clippy_warn']
+          # These are informational: post the whole log, not just the summary lines.
+          verbose = {'clippy_warn'}
           budget = 55000
           bodies = []
           for name in order:
@@ -73,7 +78,7 @@ jobs:
                       '    Blocking', '   Installing', '    Finished', '      Fresh')
               log = '\n'.join(l for l in raw.splitlines()
                                if not l.lstrip('\x1b[0-9;m').startswith(tuple(s.strip() for s in skip)))
-              if code == '0':
+              if code == '0' and name not in verbose:
                   tail = [l for l in log.splitlines() if l.startswith('test result:')
                           or l.startswith('warning:')][-12:]
                   bodies.append((name, code, '\n'.join(tail)))
@@ -84,7 +89,7 @@ jobs:
               status = 'ok' if code == '0' else f'FAILED (exit {code})'
               print(f'\n<details open><summary><b>{name}</b>: {status}</summary>\n')
               print('```')
-              if code != '0' and len(text) > share:
+              if len(text) > share:
                   text = text[:share // 3] + '\n...[snip]...\n' + text[-2 * share // 3:]
               print(text.strip() or '(no output)')
               print('```')
@@ -102,3 +107,103 @@ jobs:
             git commit -m "style: cargo fmt [skip ci]"
             git push origin HEAD:${{ github.ref_name }}
           fi
+
+  # TEMPORARY diagnostics: reproduces the steps of the jobs that are red on main
+  # and mirrors their output here, since Actions logs are not readable from the
+  # sandbox. Deleted together with this whole workflow.
+  probe-extra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.74"
+      - uses: Swatinem/rust-cache@v2
+      - name: Install the tools the real jobs use
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh fish groff man-db
+
+      - name: Reproduce the red jobs
+        run: |
+          set +e
+          mkdir -p /tmp/logs
+          run_step() {
+            name="$1"; shift
+            bash -c "$*" > "/tmp/logs/$name.txt" 2>&1
+            echo "$?" > "/tmp/logs/$name.exit"
+          }
+          run_step msrv 'rustup run 1.74 cargo build --workspace --all-targets 2>&1 | tail -60'
+          run_step cabi '
+            echo "--- build with header generation ---"
+            ETHIOPIC_UPDATE_HEADER=1 cargo build -p ethiopic-ffi --release 2>&1 | tail -30
+            echo "--- include dir contents ---"
+            ls -la crates/ethiopic-ffi/include 2>&1
+            echo "--- header drift check ---"
+            git diff --exit-code -- crates/ethiopic-ffi/include/ethiopic.h; echo "diff exit=$?"
+            echo "--- compile demo.c ---"
+            cc -Wall -Wextra -Werror -I crates/ethiopic-ffi/include \
+               crates/ethiopic-ffi/examples/demo.c -L target/release -lethiopic -o /tmp/demo 2>&1 | tail -30
+            echo "cc exit=$?"
+            LD_LIBRARY_PATH=target/release /tmp/demo 2>&1 | tail -20
+            echo "--- exported symbols ---"
+            nm -D --defined-only target/release/libethiopic.so 2>&1 | grep " T " | head -40
+          '
+          run_step climan '
+            cargo build -p ethdate --release 2>&1 | tail -20
+            BIN=target/release/ethdate
+            check() { desc="$1"; shift; out=$("$@" 2>&1); code=$?; echo "[$desc] exit=$code :: ${out}"; }
+            check "version" $BIN --version
+            check "gregorian-iso" bash -c "test \"\$(/home/runner/work/pagumie/pagumie/$BIN -F gregorian --iso 2024-09-11)\" = \"2017-01-01\""
+            check "to-gregorian" bash -c "test \"\$(/home/runner/work/pagumie/pagumie/$BIN -g --iso 2015-13-06)\" = \"2023-09-11\""
+            check "holidays" $BIN --holidays 2017 --locale en
+            check "computus" $BIN --computus 2017
+            check "waybar" $BIN --waybar 2017-01-01
+            check "stdin" bash -c "seq 0 6 | sed \"s/^/+ /\" | /home/runner/work/pagumie/pagumie/$BIN - --iso"
+            echo "--- roff warnings ---"
+            groff -man -Tutf8 -ww -z crates/ethdate/man/ethdate.1 2>/tmp/err.txt || true
+            cat /tmp/err.txt
+            echo "--- man --warnings ---"
+            man --warnings -E UTF-8 -l crates/ethdate/man/ethdate.1 2>&1 >/dev/null | head -20
+            echo "--- completion syntax ---"
+            bash -n crates/ethdate/completions/ethdate.bash; echo "bash=$?"
+            zsh -n crates/ethdate/completions/_ethdate; echo "zsh=$?"
+            fish -n crates/ethdate/completions/ethdate.fish; echo "fish=$?"
+            echo "--- help options vs man page ---"
+            for opt in $(target/release/ethdate --help | grep -oE "^\s+--[a-z-]+|, --[a-z-]+" | grep -oE "\--[a-z-]+" | sort -u); do
+              stripped="${opt#--}"
+              grep -q -- "\\\\-\\\\-$stripped" crates/ethdate/man/ethdate.1 || echo "MISSING IN MAN: $opt"
+            done
+            echo "--- shellcheck-ish: bash -n on help ---"
+            $BIN --help | head -30
+          '
+          true
+
+      - name: Post diagnostics to issue #1
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY' > /tmp/body.md
+          import os
+          run = os.environ.get('GITHUB_RUN_ID', '?')
+          sha = os.environ.get('GITHUB_SHA', '?')[:8]
+          print(f'### extra diagnostics run {run} @ {sha}')
+          for name in ['msrv', 'cabi', 'climan']:
+              try:
+                  code = open(f'/tmp/logs/{name}.exit').read().strip()
+              except OSError:
+                  continue
+              text = open(f'/tmp/logs/{name}.txt', errors='replace').read()
+              text = ''.join(c for c in text if c == '\n' or c == '\t' or ord(c) >= 32)
+              status = 'ok' if code == '0' else f'FAILED (exit {code})'
+              print(f'\n<details open><summary><b>{name}</b>: {status}</summary>\n')
+              print('```')
+              if len(text) > 6000:
+                  text = text[:2000] + '\n...[snip]...\n' + text[-4000:]
+              print(text.strip() or '(no output)')
+              print('```')
+              print('\n</details>')
+          PY
+          gh issue comment 1 --repo "$GITHUB_REPOSITORY" --body-file /tmp/body.md

@@ -85,10 +85,9 @@ fn dispatch<W: Write>(o: &Options, out: &mut W) -> i32 {
         Action::Version => {
             let _ = writeln!(
                 out,
-                "{PROGRAM} {}\nethiopic-calendar {}\n{}",
+                "{PROGRAM} {}\nethiopic-calendar {}\nLicensed under MIT or Apache-2.0.",
                 env!("CARGO_PKG_VERSION"),
-                ethiopic_calendar::VERSION,
-                "Licensed under MIT or Apache-2.0."
+                ethiopic_calendar::VERSION
             );
             return EXIT_OK;
         }
@@ -151,14 +150,13 @@ fn dispatch<W: Write>(o: &Options, out: &mut W) -> i32 {
                     if buf.is_empty() {
                         continue;
                     }
-                    match std::str::from_utf8(&buf) {
-                        Ok(s) => inputs.push(s.to_string()),
-                        Err(_) => {
-                            if !o.quiet {
-                                eprintln!("{PROGRAM}: standard input is not valid UTF-8");
-                            }
-                            return EXIT_FAILURE;
+                    if let Ok(s) = std::str::from_utf8(&buf) {
+                        inputs.push(s.to_string());
+                    } else {
+                        if !o.quiet {
+                            eprintln!("{PROGRAM}: standard input is not valid UTF-8");
                         }
+                        return EXIT_FAILURE;
                     }
                 }
                 Err(e) => {

@@ -28,3 +28,13 @@ pedantic = { level = "warn", priority = -1 }
 module_name_repetitions = "allow"
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
+# The render layer appends prose to a String builder. `write!` would avoid the
+# temporary `format!` allocation, but at ~28 sites it needs a `fmt::Write`
+# import and a `let _ =` on every one of them, in a CLI that renders a few
+# hundred bytes. The allocation is not what this binary spends its time on.
+format_push_string = "allow"
+# The JSON/Waybar renderers use short, math-style locals whose names mirror the
+# keys of the output format they emit; renaming them would obscure that mapping.
+many_single_char_names = "allow"
+# `Options` is the flag bag behind --help: one bool per switch is the design.
+struct_excessive_bools = "allow"

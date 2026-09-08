@@ -1,4 +1,4 @@
-//! Minimal TZif (RFC 8536) reader: just enough to answer "what is the UTC
+//! Minimal `TZif` (RFC 8536) reader: just enough to answer "what is the UTC
 //! offset and zone abbreviation right now?".
 //!
 //! A date tool that hard-codes UTC+03:00 is wrong on every machine outside
@@ -51,11 +51,7 @@ pub fn local_offset(timestamp: i64) -> LocalOffset {
         if let Some(off) = parse_fixed_tz(&tz) {
             return off;
         }
-        let path = if tz.starts_with(':') {
-            tz[1..].to_string()
-        } else {
-            tz.clone()
-        };
+        let path = tz.strip_prefix(':').unwrap_or(tz.as_str()).to_string();
         let candidate = if path.starts_with('/') {
             path.clone()
         } else {
@@ -128,7 +124,7 @@ pub fn parse_hhmm_offset(s: &str) -> Option<i32> {
     Some(sign * (h * 3600 + m * 60 + sec))
 }
 
-/// Reads a TZif file and returns the offset in force at `timestamp`.
+/// Reads a `TZif` file and returns the offset in force at `timestamp`.
 pub fn offset_from_tzfile(path: &str, timestamp: i64) -> io::Result<LocalOffset> {
     let data = fs::read(path)?;
     parse_tzif(&data, timestamp)
@@ -213,6 +209,9 @@ fn parse_tzif(d: &[u8], timestamp: i64) -> io::Result<LocalOffset> {
         0
     } else {
         let mut idx = None;
+        // `i` feeds two different tables (`read_time(i)` and `indices[i]`), so
+        // the loop genuinely needs the index rather than an iterator.
+        #[allow(clippy::needless_range_loop)]
         for i in 0..h.timecnt {
             if read_time(i) <= timestamp {
                 idx = Some(indices[i] as usize);

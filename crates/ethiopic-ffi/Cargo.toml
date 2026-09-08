@@ -33,3 +33,7 @@ module_name_repetitions = "allow"
 cast_possible_truncation = "allow"
 cast_sign_loss = "allow"
 cast_lossless = "allow"
+# The C ABI returns negative values for pre-epoch times and -1 for "buffer too
+# small", so narrowing an unsigned size to the signed type the C caller reads
+# back is the contract, not an accident.
+cast_possible_wrap = "allow"

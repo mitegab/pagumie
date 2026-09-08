@@ -169,6 +169,9 @@ fn json(r: &Resolved, o: &Options) -> Result<String> {
 
 /// Waybar's `custom` module reads a JSON object with `text`, `alt`, `tooltip`
 /// and `class` keys; `class` drives the CSS, so holidays can be styled.
+// Kept as `Result` so every renderer in the dispatch table in `main`
+// shares one signature, even the ones that cannot fail.
+#[allow(clippy::unnecessary_wraps)]
 fn waybar(r: &Resolved, o: &Options) -> Result<String> {
     let d = r.date;
     let text_fmt = o.format.clone().unwrap_or_else(|| match o.locale {
@@ -235,6 +238,9 @@ fn waybar(r: &Resolved, o: &Options) -> Result<String> {
     ))
 }
 
+// Kept as `Result` so every renderer in the dispatch table in `main`
+// shares one signature, even the ones that cannot fail.
+#[allow(clippy::unnecessary_wraps)]
 fn polybar(r: &Resolved, o: &Options) -> Result<String> {
     let d = r.date;
     let fmt = o.format.clone().unwrap_or_else(|| match o.locale {

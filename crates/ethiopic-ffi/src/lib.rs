@@ -86,7 +86,6 @@ impl From<Error> for EthStatus {
             Error::YearOutOfRange { .. } | Error::RataDieOutOfRange { .. } => Self::YearOutOfRange,
             Error::JulianYearZero => Self::JulianYearZero,
             Error::Overflow => Self::Overflow,
-            Error::Parse(_) => Self::InvalidArgument,
             Error::TimeOutOfRange => Self::TimeOutOfRange,
             _ => Self::InvalidArgument,
         }
@@ -213,6 +212,9 @@ fn to_eth(d: EthiopianDate) -> EthDate {
     }
 }
 
+// Takes a reference to mirror the `const EthDate *` the C entry points
+// hand it, rather than copying at each call site.
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn from_eth(d: &EthDate) -> Result<EthiopianDate, EthStatus> {
     EthiopianDate::from_ymd(d.year, d.month, d.day).map_err(EthStatus::from)
 }
